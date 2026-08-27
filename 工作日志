@@ -18,3 +18,30 @@
 2. 掌握Hi3861编译产物区分，知道`allinone.bin`是业务实验使用的烧录镜像，区分boot、loader、OTA各类bin文件的用途。
 3. STM3电机驱动加深理解：电机控制分为PWM速度信号 + GPIO方向信号两部分；负数参数需要软件内部取绝对值输出PWM，同时翻转方向引脚电平。
 4. 熟悉STM32串口通信，学会使用串口打印作为调试手段。
+
+
+8月27
+今日完成工作
+1. 补全 nfc.h 头文件
+根据 nfc.c 和 main.c 中对 NFC 模块的调用，补全了 nfc.h，包括：
+函数声明：NFC_Init()、NFC_Handler()、FoundCard_Handler()、FlowLight_Update() 等
+全局变量声明：NFC_WakeUp_Ok、NFC_find_Card、NFC_sendcmd_find、NFC_DataBlock[4]、led_flow_active
+已知卡 UID 宏定义（3 张卡）
+2. 修复 USART 相关问题
+排查并修复了串口初始化、收发函数中的问题，确保 USART1（调试打印）和 USART2（PN532 通信）正常工作。
+3. 实现 NFC 刷卡触发流水灯
+在 nfc.c 中实现：
+FoundCard_Handler()：刷卡成功后启动右灯绿色流水灯（3 圈）
+FlowLight_Update()：非阻塞流水灯状态机，每 100ms 推进一帧
+led_flow_active 标志位：流水灯运行期间暂停寻卡，结束后自动恢复
+4. 修复串口调试助手无条件刷屏问题
+问题：control_system.c 的 System_Control() 中 printf 每 100ms 无条件打印电机调试信息（ph0 L0 R0 tg560/560 MA0 MB0...），导致串口助手一直弹数字。
+解决：将该 printf 三行注释掉，只保留贴卡时的寻卡响应打印（put_HEX）。
+5. 修复贴卡不亮灯、串口无数据的问题
+排查发现两个根因：
+根因 A — PN532 未被唤醒（nfc.c）：
+NFC_Handler 只有 "唤醒成功后才发寻卡指令" 的分支，但没有发送唤醒命令的代码。NFC_WakeUp_Ok 初始为 0，永远等不到唤醒应答，寻卡指令永不发送。
+解决：在 NFC_Handler 中加入未唤醒分支，用静态计数器每 500ms 自动发送一次唤醒命令 NFC_WakeUp，直到中断检测到唤醒应答。
+根因 B — skip=30 吞掉寻卡响应（stm32f10x_it.c）：
+唤醒成功后设置 skip = 30（丢弃后续 30 字节），但 PN532 唤醒应答仅约 16 字节，skip 剩余约 14 字节会把寻卡响应的前 14 字节也丢掉，导致 RxCounter 永远到不了 25，贴卡不触发。而 nfc.c 发寻卡命令前已有 RxCounter=0 重置，skip 完全多余。
+解决：删除整个 skip 逻辑（变量声明、两处赋值、else if(skip>0) 分支）。
