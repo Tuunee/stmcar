@@ -4,67 +4,69 @@ u8 AIN = 0;
 u8 BIN = 0;
 u16 PWMA = 0;
 u16 PWMB = 0;
+static u16 pwm_period = 0;
 /*********************************************************
-º¯Êý¹¦ÄÜ: ³õÊ¼»¯µç»ú·½Ïò
-Èë¿Ú²ÎÊý: ÎÞ
-·µ»Ø Öµ: ÎÞ
+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+ï¿½ï¿½Ú²ï¿½ï¿½ï¿½: ï¿½ï¿½
+ï¿½ï¿½ï¿½ï¿½ Öµ: ï¿½ï¿½
 *********************************************************/
 void Motor_Init(void)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE); //Ê¹ÄÜPB¶Ë¿ÚÊ±ÖÓ
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_14|GPIO_Pin_13; //¶Ë¿ÚÅäÖÃ
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;      //ÍÆÍìÊä³ö
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE); //Ê¹ï¿½ï¿½PBï¿½Ë¿ï¿½Ê±ï¿½ï¿½
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_14|GPIO_Pin_13; //ï¿½Ë¿ï¿½ï¿½ï¿½ï¿½ï¿½
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;      //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;      //50M
-	GPIO_Init(GPIOB, &GPIO_InitStructure);                 //¸ù¾ÝÉè¶¨²ÎÊý³õÊ¼»¯GPIOB
-	
+	GPIO_Init(GPIOB, &GPIO_InitStructure);                 //ï¿½ï¿½ï¿½ï¿½ï¿½è¶¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½GPIOB
+
 	AIN=0;
 	BIN=0;
 }
 
-
 /*********************************************************
-º¯Êý¹¦ÄÜ: ³õÊ¼»¯³õÊ¼»¯¶¨Ê±Æ÷pwm
-Èë¿Ú²ÎÊý: ÎÞ
-·µ»Ø Öµ: ÎÞ
+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½PWM
+ï¿½ï¿½Ú²ï¿½ï¿½ï¿½: ï¿½ï¿½
+ï¿½ï¿½ï¿½ï¿½ Öµ: ï¿½ï¿½
 *********************************************************/
 void PWM_Init(u16 arr,u16 psc)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
 	TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
 	TIM_OCInitTypeDef  TIM_OCInitStructure;
-	
+
+	pwm_period = arr + 1;
 	Motor_Init();
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);//
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB , ENABLE);  //Ê¹ÄÜGPIOÍâÉèÊ±ÖÓÊ¹ÄÜ
-	//ÉèÖÃ¸ÃÒý½ÅÎª¸´ÓÃÊä³ö¹¦ÄÜ,Êä³öTIM1 CH1 CH4µÄPWMÂö³å²¨ÐÎ
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6|GPIO_Pin_7; //TIM_CH1 //TIM_CH4
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;  //¸´ÓÃÍÆÍìÊä³ö
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB , ENABLE);  //Ê¹ï¿½ï¿½GPIOÊ±ï¿½ï¿½
+	//ï¿½ï¿½ï¿½Ã¸ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½TIM4 CH1 CH2ï¿½ï¿½PWMï¿½ï¿½ï¿½å²¨ï¿½ï¿½
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6|GPIO_Pin_7; //TIM4_CH1 //TIM4_CH2
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;  //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-	TIM_TimeBaseStructure.TIM_Period = arr; //ÉèÖÃÔÚÏÂÒ»¸ö¸üÐÂÊÂ¼þ×°Èë»î¶¯µÄ×Ô¶¯ÖØ×°ÔØ¼Ä´æÆ÷ÖÜÆÚµÄÖµ
-	TIM_TimeBaseStructure.TIM_Prescaler =psc; //ÉèÖÃÓÃÀ´×÷ÎªTIMxÊ±ÖÓÆµÂÊ³ýÊýµÄÔ¤·ÖÆµÖµ  ²»·ÖÆµ
-	TIM_TimeBaseStructure.TIM_ClockDivision = 0; //ÉèÖÃÊ±ÖÓ·Ö¸î:TDTS = Tck_tim
-	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;  //TIMÏòÉÏ¼ÆÊýÄ£Ê½
-	TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure); //¸ù¾ÝTIM_TimeBaseInitStructÖÐÖ¸¶¨µÄ²ÎÊý³õÊ¼»¯TIMxµÄÊ±¼ä»ùÊýµ¥Î»
+	TIM_TimeBaseStructure.TIM_Period = arr; //ï¿½Ô¶ï¿½ï¿½ï¿½×°ï¿½Ø¼Ä´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Úµï¿½Öµ
+	TIM_TimeBaseStructure.TIM_Prescaler =psc; //Ô¤ï¿½ï¿½Æµ
+	TIM_TimeBaseStructure.TIM_ClockDivision = 0; //Ê±ï¿½Ó·Ö¸ï¿½:TDTS = Tck_tim
+	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;  //TIMï¿½ï¿½ï¿½Ï¼ï¿½ï¿½ï¿½Ä£Ê½
+	TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure); //ï¿½ï¿½Ê¼ï¿½ï¿½TIM4
 
-	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1; //Ñ¡Ôñ¶¨Ê±Æ÷Ä£Ê½:TIMÂö³å¿í¶Èµ÷ÖÆÄ£Ê½1
-	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable; //±È½ÏÊä³öÊ¹ÄÜ
-	TIM_OCInitStructure.TIM_Pulse = 0;                             //ÉèÖÃ´ý×°Èë²¶»ñ±È½Ï¼Ä´æÆ÷µÄÂö³åÖµ
-	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;      //Êä³ö¼«ÐÔ:TIMÊä³ö±È½Ï¼«ÐÔ¸ß
-	TIM_OC1Init(TIM4, &TIM_OCInitStructure);  //¸ù¾ÝTIM_OCInitStructÖÐÖ¸¶¨µÄ²ÎÊý³õÊ¼»¯ÍâÉèTIMx
-	TIM_OC2Init(TIM4, &TIM_OCInitStructure);  //¸ù¾ÝTIM_OCInitStructÖÐÖ¸¶¨µÄ²ÎÊý³õÊ¼»¯ÍâÉèTIMx
+	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1; //PWMÄ£Ê½1
+	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable; //ï¿½È½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½
+	TIM_OCInitStructure.TIM_Pulse = 0;                             //ï¿½ï¿½ï¿½Ã´ï¿½×°ï¿½ë²¶ï¿½ï¿½È½Ï¼Ä´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµ
+	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;      //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½:ï¿½ï¿½
+	TIM_OC1Init(TIM4, &TIM_OCInitStructure);  //ï¿½ï¿½Ê¼ï¿½ï¿½TIM4 CH1
+	TIM_OC2Init(TIM4, &TIM_OCInitStructure);  //ï¿½ï¿½Ê¼ï¿½ï¿½TIM4 CH2
 
-	TIM_CtrlPWMOutputs(TIM4, ENABLE);	//MOE Ö÷Êä³öÊ¹ÄÜ
+	TIM_CtrlPWMOutputs(TIM4, ENABLE);	//MOE ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½
 
-	TIM_OC1PreloadConfig(TIM4, TIM_OCPreload_Enable);  //CH1Ô¤×°ÔØÊ¹ÄÜ
-	TIM_OC2PreloadConfig(TIM4, TIM_OCPreload_Enable);  //CH4Ô¤×°ÔØÊ¹ÄÜ
+	TIM_OC1PreloadConfig(TIM4, TIM_OCPreload_Enable);  //CH1Ô¤×°ï¿½ï¿½Ê¹ï¿½ï¿½
+	TIM_OC2PreloadConfig(TIM4, TIM_OCPreload_Enable);  //CH2Ô¤×°ï¿½ï¿½Ê¹ï¿½ï¿½
 
-	TIM_ARRPreloadConfig(TIM4, ENABLE); //Ê¹ÄÜTIMxÔÚARRÉÏµÄÔ¤×°ÔØ¼Ä´æÆ÷
-	
-	TIM_Cmd(TIM4, ENABLE);  //Ê¹ÄÜTIM1
+	TIM_ARRPreloadConfig(TIM4, ENABLE); //Ê¹ï¿½ï¿½TIM4ï¿½ï¿½ARRï¿½Ïµï¿½Ô¤×°ï¿½Ø¼Ä´ï¿½ï¿½ï¿½
+
+	TIM_Cmd(TIM4, ENABLE);  //Ê¹ï¿½ï¿½TIM4
 }
+
 u32 myabs(long int a)
 {
     u32 temp;
@@ -78,27 +80,28 @@ u32 myabs(long int a)
 
 void Set_Pwm(int moto1,int moto2)
 {
-    //XIN PWMXÔÚmotro.hÖÐÓÐ¶¨Òå
+    //moto1->Aï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½), moto2->Bï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½)
     if(moto2>=0) {
         BIN=0;
         PWMB=myabs(moto2);
-			GPIO_ResetBits(GPIOB,GPIO_Pin_14);  //BINÊä³öµÍµçÆ½£¬Õý×ªÇ°½ø
+        GPIO_ResetBits(GPIOB,GPIO_Pin_14);  //BINï¿½Íµï¿½Æ½ ï¿½ï¿½×ªÇ°ï¿½ï¿½
     }else{
         BIN=1;
-        PWMB=myabs(moto2);
-			GPIO_SetBits(GPIOB,GPIO_Pin_14);    //BINÊä³ö¸ßµçÆ½£¬·´×ªºóÍË
+        PWMB=pwm_period-myabs(moto2);
+        if(PWMB>=pwm_period) PWMB=0;
+        GPIO_SetBits(GPIOB,GPIO_Pin_14);    //BINï¿½ßµï¿½Æ½ ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½
     }
 
     if(moto1>=0) {
         AIN=0;
         PWMA=myabs(moto1);
-			GPIO_ResetBits(GPIOB,GPIO_Pin_13);  //AINÊä³öµÍµçÆ½£¬Õý×ªÇ°½ø
+        GPIO_ResetBits(GPIOB,GPIO_Pin_13);  //AINï¿½Íµï¿½Æ½ ï¿½ï¿½×ªÇ°ï¿½ï¿½
     }else{
         AIN=1;
-        PWMA=myabs(moto1);
-			GPIO_SetBits(GPIOB,GPIO_Pin_13);    //AINÊä³ö¸ßµçÆ½£¬·´×ªºóÍË
+        PWMA=pwm_period-myabs(moto1);
+        if(PWMA>=pwm_period) PWMA=0;
+        GPIO_SetBits(GPIOB,GPIO_Pin_13);    //AINï¿½ßµï¿½Æ½ ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½
     }
-		TIM_SetCompare1(TIM4, PWMA);
+    TIM_SetCompare1(TIM4, PWMA);
     TIM_SetCompare2(TIM4, PWMB);
 }
-

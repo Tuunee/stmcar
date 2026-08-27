@@ -1,32 +1,35 @@
 #include "stm32f10x.h"
 #include "sys.h"
+#include "encoder.h"
 #include "motor.h"
+#include "control_system.h"
+#include "nfc.h"
+#include <stdio.h>
+
 int main(void)
-  { 
-		RCC->CSR |=1<<24;
-		Stm32_Clock_Init(9);						//外部时钟8Mhz 9倍频  8*9= 72mhz倍频72mhz
-		MY_NVIC_PriorityGroupConfig(2);	//=====中断优先级分组		
-		uart_init(115200);	            //=====串口初始化为115200
-		JTAG_Set(JTAG_SWD_DISABLE);     //=====关闭JTAG接口
-		JTAG_Set(SWD_ENABLE);           //=====打开SWD接口 可以利用主板的SWD接口调试
-		PWM_Init(7199,9);
-		colorful_led_Init();            //=====炫彩灯初始化
+{
+    Stm32_Clock_Init(9);            // =====????8Mhz 9?? 8*9= 72mhz??72mhz
+    MY_NVIC_PriorityGroupConfig(2); // =====???????
+    uart_init(115200);              // =====??????115200
+    USART2_Init(115200);              // NFC module (PN532 UART) @
+    JTAG_Set(JTAG_SWD_DISABLE);     // =====??JTAG??
+    JTAG_Set(SWD_ENABLE);           // =====??SWD?? ???????SWD????
 
-		printf("QST青软\r\n");
-		/**主要程序**/
-	
-	while(1){
-		Set_Pwm(3500,3500);
-		delay_ms(2000);
-		
-		Set_Pwm(0,0);
-		delay_ms(1000);
-		
-		Set_Pwm(-1500,-1500);
-		delay_ms(2000);
-		
-		Set_Pwm(0,0);
-		delay_ms(1000);
-}
-}
+    Encoder_Init_TIM2();            // =====??????
+    Encoder_Init_TIM3();            // =====??????
 
+    PWM_Init(7199, 9);              // =====?????? ??1000
+
+    colorful_led_Init();            // LED for NFC card-feedback
+
+    SysTick_Config(72000000/1000);  // ?????,?1ms??????
+
+    printf("QST??\r\n");
+
+    /**????**/
+    while(1)
+    {
+        NFC_Handler();              // NFC poll: wakeup / search card
+        delay_ms(100);
+    }
+}
